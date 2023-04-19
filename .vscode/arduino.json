@@ -4,5 +4,5 @@
     "programmer": "esptool",
     "sketch": "marax-handler.ino",
     "output": "../build",
-    "port": "COM6"
+    "port": "/dev/tty.wchusbserial54F40060121"
 }
