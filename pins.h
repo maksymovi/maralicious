@@ -1,3 +1,5 @@
+#pragma once
+
 #define PUMP_PIN 27
 
 //black yellow

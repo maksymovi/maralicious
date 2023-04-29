@@ -18,7 +18,7 @@ bool readMaraSerial(MaraXOutput &out)
                &out.steamTemp, &out.targetTemp, &out.hxTemp, &out.heatingCountdown, &heaterTemp);
         out.version = versionTemp1 * 100 + versionTemp2;
         out.heaterOn = heaterTemp;
-        return val == 8; // return true if all 8 vales were read
+        return val == 8; // return true if all 8 values were read
     }
     else
     {
