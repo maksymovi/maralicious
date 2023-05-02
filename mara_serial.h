@@ -17,4 +17,10 @@ typedef struct MaraXOutput
     time_t time;
 } MaraXOutput;
 
+bool initWifi();
+
+bool broadcastWifi(const char *const message);
+
 bool readMaraSerial(MaraXOutput &out);
+
+bool parseMaraSerial(MaraXOutput &out, char *input);

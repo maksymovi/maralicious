@@ -1,4 +1,4 @@
-#include "mara_draw.h"
+#include "MaraDisplayer.h"
 #include <math.h>
 
 #include "espresso_parameters.h"
@@ -6,36 +6,20 @@
 #define ARC_ANGLE 260
 #define ARC_WIDTH 12
 #define TIMER_FONT 1
+#define BACKGROUND_COLOR TFT_BLACK
 #define TIMER_COLOR TFT_MAGENTA
 #define TARGET_TIME_COLOR TFT_DARKGREEN
 #define LESSER_TARGET_TIME_COLOR TFT_GREENYELLOW
+#define HEATER_DOT_SIZE 5
 
+//apparently this needs to be defined in global scope only
 TFT_eSPI tft = TFT_eSPI();
-int timerCenterX;
-int timerCenterY;
-int timerRadius;
-int barStart;
-int barEnd;
-int greenBarStart;
-int greenBarEnd;
-int yellowBarStart;
-int yellowBarEnd;
 
-int tempCenterX;
-int tempCenterY;
-int tempRadius;
-int targetTemperatureArcAngle;
-int targetTempStart;
-int targetTempEnd;
-
-
-
-
-void drawSetup()
+MaraDisplayer::MaraDisplayer()
 {
     tft.init();
     tft.invertDisplay(1);
-    tft.setRotation(0);
+    tft.setRotation(2);
     tft.setTextSize(3);
     tft.fillScreen(TFT_WHITE); //quick and dirty ghosting fix on boot
     delay(50);
@@ -71,7 +55,9 @@ void drawSetup()
 }
 
 
-void drawTimerArc(time_t currentTime)
+/// @brief Draws an arc based on the timer input, arc is constrained between 0 and 2 * TARGET_SHOT_TIME so that target is always on top
+/// @param currentTime int, timer value in milliseconds
+void MaraDisplayer::drawTimerArc(time_t currentTime)
 {
     static int lastTime = 0;
     if (lastTime > currentTime) //reset the timer
@@ -91,7 +77,8 @@ void drawTimerArc(time_t currentTime)
     tft.drawCentreString(buff, timerCenterX, timerCenterY - tft.fontHeight(TIMER_FONT)/2, TIMER_FONT);
 }
 
-void drawTimerArcOutline()
+/// @brief Draws the outline for the timer dial/arc thing
+void MaraDisplayer::drawTimerArcOutline()
 {
     tft.drawSmoothArc(timerCenterX, timerCenterY, timerRadius, timerRadius - ARC_WIDTH, barStart, barEnd, TFT_LIGHTGREY, TFT_LIGHTGREY, true );
     tft.drawSmoothArc(timerCenterX, timerCenterY, timerRadius, timerRadius - ARC_WIDTH, yellowBarStart, yellowBarEnd, LESSER_TARGET_TIME_COLOR, LESSER_TARGET_TIME_COLOR, false );
@@ -99,7 +86,8 @@ void drawTimerArcOutline()
     
 }
 
-void drawTempArcOutline()
+/// @brief Draws the outline for the temperature dial/arc thing
+void MaraDisplayer::drawTempArcOutline()
 {
     tft.drawSmoothArc(tempCenterX, tempCenterY, tempRadius, tempRadius - ARC_WIDTH, barStart, barEnd, TFT_LIGHTGREY, TFT_LIGHTGREY, true );
     //add in target arcs
@@ -111,11 +99,13 @@ void drawTempArcOutline()
     tft.setTextSize(3);
 }
 
-//draw the temperature arc
-void drawTempArc(int hxTemp, int steamTemp)
+
+/// @brief Draws the temperature dial/arc thing, the arc dial is for the heat exchanger temperature but the steam boiler temperature is also printed
+/// @param hxTemp int, heat exchanger temperature
+/// @param steamTemp int, steam boiler temperature
+void MaraDisplayer::drawTempArc(int hxTemp, int steamTemp)
 {
-    char buff1[16];
-    char buff2[16];
+    char buff[16];
 
     //record temperature from last call, if its less than the new temperature, redraw the outline
     static int lastTemp = 0;
@@ -125,20 +115,36 @@ void drawTempArc(int hxTemp, int steamTemp)
 
     //constrain temp to be within the bar's limits
     hxTemp = constrain(hxTemp, HX_TEMP_LOWER_LIMIT, HX_TEMP_UPPER_LIMIT);
-    
+
     //linscale weighted bar length
     //add 1 to not have a 0 length bar causing shenanigans
     int timerBarEnd = map(hxTemp, HX_TEMP_LOWER_LIMIT, HX_TEMP_UPPER_LIMIT, barStart, barEnd) + 1;
-
     tft.drawSmoothArc(tempCenterX, tempCenterY, tempRadius - ARC_WIDTH/4, tempRadius - (ARC_WIDTH * 3)/4, barStart, timerBarEnd, TIMER_COLOR, TIMER_COLOR, true );
 
-    sprintf(buff1, "%3d C", hxTemp);
-    sprintf(buff2, "%3d C", steamTemp);
-    
+
+    //print temperatures
     tft.setTextSize(2);
-    tft.drawCentreString(buff1, tempCenterX, tempCenterY - tft.fontHeight(TIMER_FONT) - 2, TIMER_FONT);
-    tft.drawCentreString(buff2, tempCenterX, tempCenterY + 4, TIMER_FONT);
+    sprintf(buff, "%3d C", hxTemp);
+    tft.drawCentreString(buff, tempCenterX, tempCenterY - tft.fontHeight(TIMER_FONT) - 2, TIMER_FONT);
+    sprintf(buff, "%3d C", steamTemp);
+    tft.drawCentreString(buff, tempCenterX, tempCenterY + 4, TIMER_FONT);
     tft.setTextSize(3);
+}
+
+
+/// @brief Draw a small green dot on the lower left of the display whenever the heater is on
+/// @param heaterOn boolean, true if heater is on
+void MaraDisplayer::drawHeaterOnDot(bool heaterOn)
+{
+    tft.fillCircle(HEATER_DOT_SIZE + 2, tft.height() - HEATER_DOT_SIZE - 2, HEATER_DOT_SIZE, heaterOn ? TFT_GREEN : BACKGROUND_COLOR);
+}
+
+
+/// @brief Draws a single character in the lower right of the screen, shows whether mara is on steam or coffee priority mode
+/// @param statusChar char to draw
+void MaraDisplayer::drawStatusChar(char statusChar)
+{
+    tft.drawChar(tft.width() - tft.textWidth("X", TIMER_FONT)/2, tft.height() - tft.fontHeight(TIMER_FONT)/2, statusChar, TFT_WHITE, BACKGROUND_COLOR, TIMER_FONT);
 }
 
 
@@ -146,7 +152,7 @@ void drawTempArc(int hxTemp, int steamTemp)
 /// @param radius radius of the arc
 /// @param chord length of chord to fit
 /// @return int, full angle of arc to fit chord in degrees
-int arcDegreeFromChord(int radius, int chord)
+int MaraDisplayer::arcDegreeFromChord(int radius, int chord)
 {
     return (acos(radius / sqrt(radius * radius + chord * chord)) * 180)/M_PI;
     
