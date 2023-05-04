@@ -4,6 +4,12 @@
 MaraWifiServer::MaraWifiServer(unsigned int port, const char *const ssid, const char *const password)
     : server(port)
 {
+    if(WiFi.status() == WL_CONNECTED)
+    {
+        properlyInitialized = true;
+        return;
+    }
+
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
     int status = WiFi.waitForConnectResult();
