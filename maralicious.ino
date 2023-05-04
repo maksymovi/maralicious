@@ -2,14 +2,15 @@
 #include <Button2.h>
 
 
+#include "src/config/secrets.h"
+#include "src/config/debug.h"
+#include "src/config/pins.h"
 
-#include "pins.h"
-#include "mara_timer.h"
-#include "MaraDisplayer.h"
-#include "MaraWifiServer.h"
-#include "MaraSerialReader.h"
-#include "secrets.h"
-#include "debug.h"
+#include "src/mara_timer.h"
+#include "src/MaraDisplayer.h"
+#include "src/MaraWifiServer.h"
+#include "src/MaraSerialReader.h"
+
 
 Button2 buttonA = Button2(BUTTONA_PIN);
 Button2 buttonB = Button2(BUTTONB_PIN);

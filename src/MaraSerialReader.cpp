@@ -3,8 +3,8 @@
 #include <Arduino.h>
 #include <regex>
 
-#include "pins.h"
-#include "debug.h"
+#include "config/pins.h"
+#include "config/debug.h"
 
 MaraSerialReader* MaraSerialReader::instance = nullptr;
 

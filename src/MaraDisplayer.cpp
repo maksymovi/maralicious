@@ -1,7 +1,7 @@
 #include "MaraDisplayer.h"
 #include <math.h>
 
-#include "espresso_parameters.h"
+#include "config/espresso_parameters.h"
 
 #define ARC_ANGLE 260
 #define ARC_WIDTH 12

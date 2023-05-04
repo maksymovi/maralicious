@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include "pins.h"
+#include "config/pins.h"
 #include "mara_timer.h"
 
 bool isTimePinEnabled()
