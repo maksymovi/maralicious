@@ -35,4 +35,7 @@ class MaraDisplayer
         int targetTemperatureArcAngle;
         int targetTempStart;
         int targetTempEnd;
+
+        int previousTimer = 0;
+        int lastTemp = 0;
 };

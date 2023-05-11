@@ -1,6 +1,7 @@
 #include "MaraDisplayer.h"
 #include <math.h>
 
+#include "config/debug.h"
 #include "config/espresso_parameters.h"
 
 #define ARC_ANGLE 260
@@ -59,11 +60,17 @@ MaraDisplayer::MaraDisplayer()
 /// @param currentTime int, timer value in milliseconds
 void MaraDisplayer::drawTimerArc(time_t currentTime)
 {
-    static int lastTime = 0;
-    if (lastTime > currentTime) //reset the timer
+    if (previousTimer > currentTime) //reset the timer
         drawTimerArcOutline();
-        
+    
+    previousTimer = currentTime;
     static char buff[16];
+
+#ifdef LIVE_DEBUG
+    Serial.print("Current time: ");
+    Serial.println(currentTime);
+
+#endif
 
     //constrain time to within the bar's limits
     currentTime = constrain(currentTime, 0, 2 * TARGET_SHOT_TIME * 1000);
@@ -108,17 +115,16 @@ void MaraDisplayer::drawTempArc(int hxTemp, int steamTemp)
     char buff[16];
 
     //record temperature from last call, if its less than the new temperature, redraw the outline
-    static int lastTemp = 0;
     if (lastTemp > hxTemp)
         drawTempArcOutline();
     lastTemp = hxTemp;
 
     //constrain temp to be within the bar's limits
-    hxTemp = constrain(hxTemp, HX_TEMP_LOWER_LIMIT, HX_TEMP_UPPER_LIMIT);
+    int hxConstrainedTemp = constrain(hxTemp, HX_TEMP_LOWER_LIMIT, HX_TEMP_UPPER_LIMIT);
 
     //linscale weighted bar length
     //add 1 to not have a 0 length bar causing shenanigans
-    int timerBarEnd = map(hxTemp, HX_TEMP_LOWER_LIMIT, HX_TEMP_UPPER_LIMIT, barStart, barEnd) + 1;
+    int timerBarEnd = map(hxConstrainedTemp, HX_TEMP_LOWER_LIMIT, HX_TEMP_UPPER_LIMIT, barStart, barEnd) + 1;
     tft.drawSmoothArc(tempCenterX, tempCenterY, tempRadius - ARC_WIDTH/4, tempRadius - (ARC_WIDTH * 3)/4, barStart, timerBarEnd, TIMER_COLOR, TIMER_COLOR, true );
 
 
